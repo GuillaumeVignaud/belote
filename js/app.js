@@ -27,7 +27,7 @@ const STORAGE_KEY = 'belote-state-v1';
 function defaultState() {
   return {
     teamNames: ['Nous', 'Eux'],
-    target: 501,          // score à atteindre pour gagner
+    target: 1000,         // score à atteindre pour gagner
     rounds: [],           // liste des manches : [{ points: [82, 80] }, ...]
   };
 }
@@ -176,6 +176,7 @@ $('btn-add').addEventListener('click', () => {
   addRound(p0, p1);
   $('input-0').value = '';
   $('input-1').value = '';
+  manualEdit = [false, false]; // on réactive le remplissage automatique
   $('input-0').focus();
 });
 
@@ -207,6 +208,20 @@ $('target-select').addEventListener('change', (event) => {
   state.target = parseInt(event.target.value, 10);
   save();
   render(); // re-vérifie si quelqu'un a déjà gagné avec ce nouvel objectif
+});
+
+/* --- Complément automatique à 162 --- */
+let manualEdit = [false, false]; // le joueur a-t-il rempli ce champ lui-même ?
+
+[0, 1].forEach((i) => {
+  const other = 1 - i; // l'autre équipe
+  $(`input-${i}`).addEventListener('input', (event) => {
+    manualEdit[i] = event.target.value.trim() !== '';
+    if (!manualEdit[other]) {
+      const value = parseInt(event.target.value, 10) || 0;
+      $(`input-${other}`).value = Number.isNaN(value) ? '' : Math.max(0, 162 - value);
+    }
+  });
 });
 
 /* ---------- 7. Démarrage ---------- */
