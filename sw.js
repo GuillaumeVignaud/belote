@@ -13,7 +13,7 @@
    resteront sur l'ancienne version.
    ========================================================= */
 
-const CACHE_NAME = 'belote-v1';
+const CACHE_NAME = 'belote-v2';
 
 // La liste complète des fichiers de l'appli ("app shell").
 // Si vous ajoutez un fichier au projet, ajoutez-le ici aussi.
