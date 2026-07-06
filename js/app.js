@@ -176,7 +176,7 @@ $('btn-add').addEventListener('click', () => {
   addRound(p0, p1);
   $('input-0').value = '';
   $('input-1').value = '';
-  manualEdit = [false, false]; // on réactive le remplissage automatique
+  let manualEdit = [false, false]; // on réactive le remplissage automatique
   $('input-0').focus();
 });
 
@@ -211,15 +211,30 @@ $('target-select').addEventListener('change', (event) => {
 });
 
 /* --- Complément automatique à 162 --- */
-let manualEdit = [false, false]; // le joueur a-t-il rempli ce champ lui-même ?
+// À qui appartient le contenu actuel de chaque champ ?
+// true = écrit par la machine (on peut l'écraser), false = tapé par le joueur ou vide
+let autoFilled = [false, false];
 
 [0, 1].forEach((i) => {
-  const other = 1 - i; // l'autre équipe
-  $(`input-${i}`).addEventListener('input', (event) => {
-    manualEdit[i] = event.target.value.trim() !== '';
-    if (!manualEdit[other]) {
-      const value = parseInt(event.target.value, 10) || 0;
-      $(`input-${other}`).value = Number.isNaN(value) ? '' : Math.max(0, 162 - value);
+  const other = 1 - i;
+
+  $(`input-${i}`).addEventListener('input', () => {
+    // Le joueur vient d'écrire ou de vider ce champ : il lui appartient
+    autoFilled[i] = false;
+
+    const otherField = $(`input-${other}`);
+
+    // Règle d'or : on n'écrase jamais un contenu tapé par le joueur.
+    // On n'écrit en face que sur du vide ou sur du contenu machine.
+    if (otherField.value !== '' && !autoFilled[other]) return;
+
+    const value = parseInt($(`input-${i}`).value, 10);
+    if (Number.isNaN(value)) {
+      otherField.value = '';       // champ vidé → le complément se vide aussi
+      autoFilled[other] = false;   // un champ vide n'appartient à personne
+    } else {
+      otherField.value = Math.max(0, 162 - value);
+      autoFilled[other] = true;    // ce contenu est à la machine
     }
   });
 });
