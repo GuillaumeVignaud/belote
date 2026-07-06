@@ -65,6 +65,17 @@
         <input type="number" inputmode="numeric" min="0" max="500"
                id="input-1" placeholder="Pts" aria-label="Points équipe 2">
       </div>
+      <!-- Annonce belote-rebelote : +20 points pour l'équipe qui la déclare -->
+      <div class="belote-checks">
+        <label class="belote-check">
+          <input type="checkbox" id="belote-0" aria-label="Belote-rebelote équipe 1">
+          Belote&nbsp;<span class="belote-bonus">+20</span>
+        </label>
+        <label class="belote-check">
+          <input type="checkbox" id="belote-1" aria-label="Belote-rebelote équipe 2">
+          Belote&nbsp;<span class="belote-bonus">+20</span>
+        </label>
+      </div>
       <button class="btn btn--primary" id="btn-add">Ajouter la manche</button>
       <p class="hint">Une manche classique totalise 162 points.</p>
     </section>

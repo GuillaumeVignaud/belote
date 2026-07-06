@@ -28,7 +28,7 @@ function defaultState() {
   return {
     teamNames: ['Nous', 'Eux'],
     target: 1000,         // score à atteindre pour gagner
-    rounds: [],           // liste des manches : [{ points: [82, 80] }, ...]
+    rounds: [],           // liste des manches : [{ points: [82, 80], belote: [true, false] }, ...]
   };
 }
 
@@ -63,9 +63,19 @@ let state = load();
    On ne stocke jamais les totaux : on les recalcule à partir des
    manches. Une seule source de vérité = zéro incohérence. */
 
+/* La belote-rebelote vaut 20 points. Les anciennes sauvegardes
+   n'ont pas de champ `belote` : on considère alors qu'il n'y a
+   pas eu d'annonce. */
+function beloteBonus(round, team) {
+  return round.belote && round.belote[team] ? 20 : 0;
+}
+
 function totals() {
   return state.rounds.reduce(
-    (acc, round) => [acc[0] + round.points[0], acc[1] + round.points[1]],
+    (acc, round) => [
+      acc[0] + round.points[0] + beloteBonus(round, 0),
+      acc[1] + round.points[1] + beloteBonus(round, 1),
+    ],
     [0, 0]
   );
 }
@@ -83,8 +93,8 @@ function winnerIndex() {
 
 /* ---------- 4. Les actions ---------- */
 
-function addRound(p0, p1) {
-  state.rounds.push({ points: [p0, p1] });
+function addRound(p0, p1, belote) {
+  state.rounds.push({ points: [p0, p1], belote });
   save();
   render({ bumpScores: true });
 }
@@ -124,9 +134,12 @@ function render(options = {}) {
   list.innerHTML = '';
   state.rounds.forEach((round, i) => {
     const li = document.createElement('li');
+    // "♛" signale une belote-rebelote : les 20 points sont déjà
+    // comptés dans le total, on rappelle juste qui l'a annoncée.
+    const mark = (team) => (beloteBonus(round, team) ? ' ♛' : '');
     li.innerHTML =
       `<span class="round-label">Manche ${i + 1}</span>` +
-      `<span class="round-points">${round.points[0]} — ${round.points[1]}</span>`;
+      `<span class="round-points">${round.points[0]}${mark(0)} — ${round.points[1]}${mark(1)}</span>`;
     list.prepend(li);
   });
   $('history-empty').hidden = state.rounds.length > 0;
@@ -144,6 +157,8 @@ function render(options = {}) {
   const gameOver = winner !== -1;
   $('input-0').disabled = gameOver;
   $('input-1').disabled = gameOver;
+  $('belote-0').disabled = gameOver;
+  $('belote-1').disabled = gameOver;
   $('btn-add').disabled = gameOver;
   $('btn-undo').disabled = state.rounds.length === 0;
 }
@@ -166,17 +181,20 @@ $('btn-add').addEventListener('click', () => {
   // Champ vide = 0 (pratique pour un capot)
   const p0 = parseInt($('input-0').value, 10) || 0;
   const p1 = parseInt($('input-1').value, 10) || 0;
+  const belote = [$('belote-0').checked, $('belote-1').checked];
 
   if (p0 < 0 || p1 < 0) return;
   if (p0 + p1 === 0) {
     $('input-0').focus();
-    return; // rien à ajouter
+    return; // rien à ajouter, même si une belote est cochée
   }
 
-  addRound(p0, p1);
+  addRound(p0, p1, belote);
   $('input-0').value = '';
   $('input-1').value = '';
-  let manualEdit = [false, false]; // on réactive le remplissage automatique
+  $('belote-0').checked = false;
+  $('belote-1').checked = false;
+  autoFilled = [false, false]; // on réactive le remplissage automatique
   $('input-0').focus();
 });
 
@@ -184,6 +202,14 @@ $('btn-add').addEventListener('click', () => {
 ['input-0', 'input-1'].forEach((id) => {
   $(id).addEventListener('keydown', (event) => {
     if (event.key === 'Enter') $('btn-add').click();
+  });
+});
+
+// Une seule belote-rebelote possible par manche (il n'y a qu'un
+// roi et une dame d'atout) : cocher une case décoche l'autre.
+[0, 1].forEach((i) => {
+  $(`belote-${i}`).addEventListener('change', (event) => {
+    if (event.target.checked) $(`belote-${1 - i}`).checked = false;
   });
 });
 

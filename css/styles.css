@@ -195,6 +195,38 @@ main {
   outline-offset: 1px;
 }
 
+/* Annonce belote-rebelote : une case par équipe, alignée
+   sous le champ de points correspondant. */
+.belote-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.belote-check {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  cursor: pointer;
+  user-select: none;
+}
+
+.belote-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.belote-bonus {
+  color: var(--gold);
+  font-weight: 600;
+}
+
 /* ===== Boutons ===== */
 
 .btn {
