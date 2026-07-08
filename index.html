@@ -22,7 +22,7 @@
 </head>
 <body>
 
-  <!-- ===== En-tête ===== -->
+  <!-- ===== En-tête (commun aux deux écrans) ===== -->
   <header class="topbar">
     <h1 class="brand"><span class="pip">&spades;</span> Belote</h1>
     <label class="target">
@@ -36,76 +36,99 @@
   </header>
 
   <main>
-    <!-- ===== Les deux "cartes" de score ===== -->
-    <!-- Chaque équipe est représentée par une carte à jouer posée sur le tapis -->
-    <section class="table" aria-label="Scores des équipes">
-      <article class="score-card score-card--red" id="card-0">
-        <span class="corner corner--tl" aria-hidden="true">&hearts;</span>
-        <input class="team-name" id="name-0" value="Nous" maxlength="12" aria-label="Nom de l'équipe 1">
-        <p class="score" id="score-0">0</p>
-        <span class="corner corner--br" aria-hidden="true">&hearts;</span>
-      </article>
+    <!-- =====================================================
+         Écran "Partie" : les scores et toutes les manches
+         ===================================================== -->
+    <div id="view-game">
+      <!-- Chaque équipe est représentée par une carte à jouer posée sur le tapis -->
+      <section class="table" aria-label="Scores des équipes">
+        <article class="score-card score-card--red" id="card-0">
+          <span class="corner corner--tl" aria-hidden="true">&hearts;</span>
+          <input class="team-name" id="name-0" value="Nous" maxlength="12" aria-label="Nom de l'équipe 1">
+          <p class="score" id="score-0">0</p>
+          <span class="corner corner--br" aria-hidden="true">&hearts;</span>
+        </article>
 
-      <article class="score-card score-card--black" id="card-1">
-        <span class="corner corner--tl" aria-hidden="true">&spades;</span>
-        <input class="team-name" id="name-1" value="Eux" maxlength="12" aria-label="Nom de l'équipe 2">
-        <p class="score" id="score-1">0</p>
-        <span class="corner corner--br" aria-hidden="true">&spades;</span>
-      </article>
-    </section>
+        <article class="score-card score-card--black" id="card-1">
+          <span class="corner corner--tl" aria-hidden="true">&spades;</span>
+          <input class="team-name" id="name-1" value="Eux" maxlength="12" aria-label="Nom de l'équipe 2">
+          <p class="score" id="score-1">0</p>
+          <span class="corner corner--br" aria-hidden="true">&spades;</span>
+        </article>
+      </section>
 
-    <!-- Bandeau affiché quand une équipe a gagné (caché par défaut) -->
-    <p class="winner-banner" id="winner-banner" hidden></p>
+      <!-- Bandeau affiché quand une équipe a gagné (caché par défaut) -->
+      <p class="winner-banner" id="winner-banner" hidden></p>
 
-    <!-- ===== Saisie d'une manche ===== -->
-    <section class="entry" aria-label="Ajouter une manche">
-      <div class="entry-inputs">
-        <input type="number" inputmode="numeric" min="0" max="162"
-               id="input-0" placeholder="Pts" aria-label="Points équipe 1">
-        <input type="number" inputmode="numeric" min="0" max="162"
-               id="input-1" placeholder="Pts" aria-label="Points équipe 2">
-      </div>
-      <!-- Capot : l'équipe qui remporte tous les plis marque 252 points.
-           Cocher une case impose 252 — 0 et verrouille la saisie manuelle. -->
-      <div class="belote-checks">
-        <label class="belote-check">
-          <input type="checkbox" id="capot-0" aria-label="Capot équipe 1">
-          Capot&nbsp;<span class="belote-bonus">252</span>
-        </label>
-        <label class="belote-check">
-          <input type="checkbox" id="capot-1" aria-label="Capot équipe 2">
-          Capot&nbsp;<span class="belote-bonus">252</span>
-        </label>
-      </div>
-      <!-- Annonce belote-rebelote : +20 points pour l'équipe qui la déclare -->
-      <div class="belote-checks">
-        <label class="belote-check">
-          <input type="checkbox" id="belote-0" aria-label="Belote-rebelote équipe 1">
-          Belote&nbsp;<span class="belote-bonus">+20</span>
-        </label>
-        <label class="belote-check">
-          <input type="checkbox" id="belote-1" aria-label="Belote-rebelote équipe 2">
-          Belote&nbsp;<span class="belote-bonus">+20</span>
-        </label>
-      </div>
-      <button class="btn btn--primary" id="btn-add">Ajouter la manche</button>
-      <p class="hint">Une manche classique totalise 162 points.</p>
-    </section>
+      <!-- Ouvre l'écran de saisie d'une nouvelle manche -->
+      <button class="btn btn--primary" id="btn-open-entry">Ajouter une manche</button>
 
-    <!-- ===== Historique des manches ===== -->
-    <section class="history" aria-label="Historique des manches">
-      <h2 class="history-title">Manches</h2>
-      <ol class="history-list" id="history-list" reversed>
-        <!-- Rempli par app.js -->
-      </ol>
-      <p class="empty" id="history-empty">Aucune manche jouée. À vous de donner&nbsp;!</p>
-    </section>
+      <!-- ===== Historique des manches ===== -->
+      <section class="history" aria-label="Historique des manches">
+        <h2 class="history-title">Manches</h2>
+        <ol class="history-list" id="history-list" reversed>
+          <!-- Rempli par app.js -->
+        </ol>
+        <p class="empty" id="history-empty">Aucune manche jouée. À vous de donner&nbsp;!</p>
+      </section>
 
-    <!-- ===== Actions ===== -->
-    <section class="actions">
-      <button class="btn" id="btn-undo">Annuler la dernière manche</button>
-      <button class="btn btn--danger" id="btn-new">Nouvelle partie</button>
-    </section>
+      <!-- ===== Actions ===== -->
+      <section class="actions">
+        <button class="btn" id="btn-undo">Annuler la dernière manche</button>
+        <button class="btn btn--danger" id="btn-new">Nouvelle partie</button>
+      </section>
+    </div>
+
+    <!-- =====================================================
+         Écran "Manche" : saisie des points et des annonces
+         ===================================================== -->
+    <div id="view-entry" hidden>
+      <section class="entry" aria-label="Ajouter une manche">
+        <h2 class="entry-title" id="entry-title">Manche 1</h2>
+
+        <div class="entry-inputs">
+          <div class="entry-col">
+            <span class="entry-team-name" id="entry-name-0">Nous</span>
+            <input type="number" inputmode="numeric" min="0" max="162"
+                   id="input-0" placeholder="Pts" aria-label="Points équipe 1">
+          </div>
+          <div class="entry-col">
+            <span class="entry-team-name" id="entry-name-1">Eux</span>
+            <input type="number" inputmode="numeric" min="0" max="162"
+                   id="input-1" placeholder="Pts" aria-label="Points équipe 2">
+          </div>
+        </div>
+
+        <!-- Capot : l'équipe qui remporte tous les plis marque 252 points.
+             Cocher une case impose 252 — 0 et verrouille la saisie manuelle. -->
+        <div class="belote-checks">
+          <label class="belote-check">
+            <input type="checkbox" id="capot-0" aria-label="Capot équipe 1">
+            Capot&nbsp;<span class="belote-bonus">252</span>
+          </label>
+          <label class="belote-check">
+            <input type="checkbox" id="capot-1" aria-label="Capot équipe 2">
+            Capot&nbsp;<span class="belote-bonus">252</span>
+          </label>
+        </div>
+
+        <!-- Annonce belote-rebelote : +20 points pour l'équipe qui la déclare -->
+        <div class="belote-checks">
+          <label class="belote-check">
+            <input type="checkbox" id="belote-0" aria-label="Belote-rebelote équipe 1">
+            Belote&nbsp;<span class="belote-bonus">+20</span>
+          </label>
+          <label class="belote-check">
+            <input type="checkbox" id="belote-1" aria-label="Belote-rebelote équipe 2">
+            Belote&nbsp;<span class="belote-bonus">+20</span>
+          </label>
+        </div>
+
+        <button class="btn btn--primary" id="btn-add">Ajouter la manche</button>
+        <button class="btn" id="btn-entry-cancel">Retour</button>
+        <p class="hint">Une manche classique totalise 162 points.</p>
+      </section>
+    </div>
   </main>
 
   <script src="./js/app.js"></script>

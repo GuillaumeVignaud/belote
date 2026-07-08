@@ -60,6 +60,16 @@ function save() {
 
 let state = load();
 
+// Écran affiché : 'game' (la partie et ses manches) ou 'entry'
+// (saisie d'une manche). C'est un état d'interface, non sauvegardé :
+// au rechargement on revient toujours sur la partie.
+let currentView = 'game';
+
+function showView(view) {
+  currentView = view;
+  render();
+}
+
 /* ---------- 3. Calculs dérivés ----------
    On ne stocke jamais les totaux : on les recalcule à partir des
    manches. Une seule source de vérité = zéro incohérence. */
@@ -121,6 +131,10 @@ function render(options = {}) {
   const [scoreA, scoreB] = totals();
   const winner = winnerIndex();
 
+  // Bascule entre les deux écrans
+  $('view-game').hidden = currentView !== 'game';
+  $('view-entry').hidden = currentView !== 'entry';
+
   // Scores
   updateScore($('score-0'), scoreA, options.bumpScores);
   updateScore($('score-1'), scoreB, options.bumpScores);
@@ -129,6 +143,11 @@ function render(options = {}) {
   $('name-0').value = state.teamNames[0];
   $('name-1').value = state.teamNames[1];
   $('target-select').value = String(state.target);
+
+  // Écran de saisie : numéro de la manche en cours et noms d'équipes
+  $('entry-title').textContent = `Manche ${state.rounds.length + 1}`;
+  $('entry-name-0').textContent = state.teamNames[0];
+  $('entry-name-1').textContent = state.teamNames[1];
 
   // Historique (la manche la plus récente en haut)
   const list = $('history-list');
@@ -166,6 +185,7 @@ function render(options = {}) {
   $('capot-0').disabled = gameOver;
   $('capot-1').disabled = gameOver;
   $('btn-add').disabled = gameOver;
+  $('btn-open-entry').disabled = gameOver;
   $('btn-undo').disabled = state.rounds.length === 0;
 }
 
@@ -183,6 +203,29 @@ function updateScore(el, value, animate) {
 
 /* ---------- 6. Les événements ---------- */
 
+/* Remet l'écran de saisie à zéro : champs vides, cases décochées. */
+function resetEntry() {
+  $('input-0').value = '';
+  $('input-1').value = '';
+  ['belote-0', 'belote-1', 'capot-0', 'capot-1'].forEach((id) => {
+    $(id).checked = false;
+  });
+  autoFilled = [false, false]; // on réactive le remplissage automatique
+}
+
+// Ouvrir l'écran de saisie d'une nouvelle manche
+$('btn-open-entry').addEventListener('click', () => {
+  resetEntry();
+  showView('entry');
+  $('input-0').focus();
+});
+
+// Quitter la saisie sans rien enregistrer
+$('btn-entry-cancel').addEventListener('click', () => {
+  resetEntry();
+  showView('game');
+});
+
 $('btn-add').addEventListener('click', () => {
   // Champ vide = 0 (pratique pour un capot)
   const p0 = parseInt($('input-0').value, 10) || 0;
@@ -198,17 +241,12 @@ $('btn-add').addEventListener('click', () => {
     return; // rien à ajouter, même si une belote est cochée
   }
 
-  // On remet la zone de saisie à zéro AVANT addRound() : son render()
-  // recalcule ainsi le verrouillage avec les cases capot décochées.
-  $('input-0').value = '';
-  $('input-1').value = '';
-  ['belote-0', 'belote-1', 'capot-0', 'capot-1'].forEach((id) => {
-    $(id).checked = false;
-  });
-  autoFilled = [false, false]; // on réactive le remplissage automatique
-
+  // On vide la saisie et on repasse sur l'écran de la partie AVANT
+  // addRound() : son render() recalcule ainsi le verrouillage avec
+  // les cases décochées, et l'animation des scores est visible.
+  resetEntry();
+  currentView = 'game';
   addRound(p0, p1, belote);
-  $('input-0').focus();
 });
 
 // La touche Entrée valide aussi la manche

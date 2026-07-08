@@ -168,9 +168,38 @@ main {
   margin: 14px 0 0;
 }
 
-/* ===== Saisie d'une manche ===== */
+/* ===== Navigation entre écrans =====
+   Les deux écrans (partie / saisie) sont montrés ou cachés via
+   l'attribut hidden ; cette règle garantit qu'aucun style de
+   display ne le contredit. */
+[hidden] { display: none !important; }
+
+/* ===== Écran de saisie d'une manche ===== */
 
 .entry { margin-top: 22px; }
+
+.entry-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.85;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 6px;
+  margin: 0 0 16px;
+}
+
+/* Nom de l'équipe au-dessus de son champ de points */
+.entry-team-name {
+  display: block;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
 
 .entry-inputs {
   display: grid;
