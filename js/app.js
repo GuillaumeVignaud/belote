@@ -29,7 +29,11 @@ function defaultState() {
   return {
     teamNames: ['Nous', 'Eux'],
     target: 1000,         // score à atteindre pour gagner
-    rounds: [],           // liste des manches : [{ points: [82, 80], belote: [true, false] }, ...]
+    // liste des manches ; `points` sont les points bruts des plis,
+    // le score final (belote, dedans) est recalculé par roundScores() :
+    // [{ points: [82, 80], belote: [true, false], capot: [false, false],
+    //    taker: 0, suit: '♥' }, ...]
+    rounds: [],
   };
 }
 
@@ -70,6 +74,12 @@ function showView(view) {
   render();
 }
 
+// Saisie en cours (écran "Manche") : preneur et couleur d'atout.
+// null tant que rien n'est choisi — la saisie des points reste
+// verrouillée jusqu'à ce que les deux soient sélectionnés.
+let entryTaker = null; // 0 ou 1
+let entrySuit = null;  // '♠', '♥', '♦' ou '♣'
+
 /* ---------- 3. Calculs dérivés ----------
    On ne stocke jamais les totaux : on les recalcule à partir des
    manches. Une seule source de vérité = zéro incohérence. */
@@ -81,14 +91,37 @@ function beloteBonus(round, team) {
   return round.belote && round.belote[team] ? 20 : 0;
 }
 
+/* Score final d'une manche pour chaque équipe :
+   - points bruts des plis + 20 points de belote éventuels ;
+   - "dedans" : si le preneur totalise strictement moins que
+     l'adversaire (belote comprise), l'adversaire marque les 162
+     points de la manche et le preneur ne garde que sa belote ;
+   - un capot n'est jamais requalifié : ses 252 — 0 sont imposés.
+   Les manches d'anciennes versions (sans preneur) restent comptées
+   telles quelles. */
+function roundScores(round) {
+  const scores = [
+    round.points[0] + beloteBonus(round, 0),
+    round.points[1] + beloteBonus(round, 1),
+  ];
+
+  const taker = round.taker;
+  const isCapot = round.capot && (round.capot[0] || round.capot[1]);
+  if (taker !== undefined && taker !== null && !isCapot) {
+    const opponent = 1 - taker;
+    if (scores[taker] < scores[opponent]) {
+      scores[opponent] = ROUND_TOTAL + beloteBonus(round, opponent);
+      scores[taker] = beloteBonus(round, taker);
+    }
+  }
+  return scores;
+}
+
 function totals() {
-  return state.rounds.reduce(
-    (acc, round) => [
-      acc[0] + round.points[0] + beloteBonus(round, 0),
-      acc[1] + round.points[1] + beloteBonus(round, 1),
-    ],
-    [0, 0]
-  );
+  return state.rounds.reduce((acc, round) => {
+    const [s0, s1] = roundScores(round);
+    return [acc[0] + s0, acc[1] + s1];
+  }, [0, 0]);
 }
 
 /* Renvoie 0 ou 1 (index de l'équipe gagnante), ou -1 si personne
@@ -104,8 +137,8 @@ function winnerIndex() {
 
 /* ---------- 4. Les actions ---------- */
 
-function addRound(p0, p1, belote) {
-  state.rounds.push({ points: [p0, p1], belote });
+function addRound(round) {
+  state.rounds.push(round);
   save();
   render({ bumpScores: true });
 }
@@ -149,17 +182,37 @@ function render(options = {}) {
   $('entry-name-0').textContent = state.teamNames[0];
   $('entry-name-1').textContent = state.teamNames[1];
 
+  // Écran de saisie : preneur et couleur d'atout sélectionnés
+  [0, 1].forEach((i) => {
+    const btn = $(`taker-${i}`);
+    btn.textContent = state.teamNames[i];
+    btn.classList.toggle('is-selected', entryTaker === i);
+    btn.setAttribute('aria-pressed', String(entryTaker === i));
+  });
+  document.querySelectorAll('.suit-btn').forEach((btn) => {
+    const selected = btn.dataset.suit === entrySuit;
+    btn.classList.toggle('is-selected', selected);
+    btn.setAttribute('aria-pressed', String(selected));
+  });
+
   // Historique (la manche la plus récente en haut)
   const list = $('history-list');
   list.innerHTML = '';
   state.rounds.forEach((round, i) => {
     const li = document.createElement('li');
-    // "♛" signale une belote-rebelote : les 20 points sont déjà
-    // comptés dans le total, on rappelle juste qui l'a annoncée.
-    const mark = (team) => (beloteBonus(round, team) ? ' ♛' : '');
+    // Scores finaux (belote et dedans compris). "♛" rappelle une
+    // belote-rebelote ; la couleur d'atout s'affiche à côté des
+    // points du preneur.
+    const [s0, s1] = roundScores(round);
+    const beloteMark = (team) => (beloteBonus(round, team) ? ' ♛' : '');
+    const suitMark = (team) => {
+      if (round.taker !== team || !round.suit) return '';
+      const red = round.suit === '♥' || round.suit === '♦';
+      return ` <span class="round-suit${red ? ' round-suit--red' : ''}">${round.suit}</span>`;
+    };
     li.innerHTML =
       `<span class="round-label">Manche ${i + 1}</span>` +
-      `<span class="round-points">${round.points[0]}${mark(0)} — ${round.points[1]}${mark(1)}</span>`;
+      `<span class="round-points">${s0}${beloteMark(0)}${suitMark(0)} — ${s1}${beloteMark(1)}${suitMark(1)}</span>`;
     list.prepend(li);
   });
   $('history-empty').hidden = state.rounds.length > 0;
@@ -175,16 +228,23 @@ function render(options = {}) {
   }
 
   const gameOver = winner !== -1;
+  // La saisie se fait dans l'ordre : preneur et couleur d'abord,
+  // points et annonces ensuite. Tant que les deux premiers choix
+  // ne sont pas faits, le reste de l'écran est verrouillé.
+  const entryReady = entryTaker !== null && entrySuit !== null;
   // Pendant un capot, les points sont imposés (252 — 0) :
   // la saisie manuelle reste verrouillée tant que la case est cochée.
   const capotLock = $('capot-0').checked || $('capot-1').checked;
-  $('input-0').disabled = gameOver || capotLock;
-  $('input-1').disabled = gameOver || capotLock;
-  $('belote-0').disabled = gameOver;
-  $('belote-1').disabled = gameOver;
-  $('capot-0').disabled = gameOver;
-  $('capot-1').disabled = gameOver;
-  $('btn-add').disabled = gameOver;
+  $('taker-0').disabled = gameOver;
+  $('taker-1').disabled = gameOver;
+  document.querySelectorAll('.suit-btn').forEach((btn) => { btn.disabled = gameOver; });
+  $('input-0').disabled = gameOver || !entryReady || capotLock;
+  $('input-1').disabled = gameOver || !entryReady || capotLock;
+  $('belote-0').disabled = gameOver || !entryReady;
+  $('belote-1').disabled = gameOver || !entryReady;
+  $('capot-0').disabled = gameOver || !entryReady;
+  $('capot-1').disabled = gameOver || !entryReady;
+  $('btn-add').disabled = gameOver || !entryReady;
   $('btn-open-entry').disabled = gameOver;
   $('btn-undo').disabled = state.rounds.length === 0;
 }
@@ -203,8 +263,11 @@ function updateScore(el, value, animate) {
 
 /* ---------- 6. Les événements ---------- */
 
-/* Remet l'écran de saisie à zéro : champs vides, cases décochées. */
+/* Remet l'écran de saisie à zéro : ni preneur ni couleur,
+   champs vides, cases décochées. */
 function resetEntry() {
+  entryTaker = null;
+  entrySuit = null;
   $('input-0').value = '';
   $('input-1').value = '';
   ['belote-0', 'belote-1', 'capot-0', 'capot-1'].forEach((id) => {
@@ -213,11 +276,34 @@ function resetEntry() {
   autoFilled = [false, false]; // on réactive le remplissage automatique
 }
 
+/* Dès que preneur ET couleur sont choisis, on amène le joueur
+   sur le premier champ de points. */
+function focusPointsIfReady() {
+  if (entryTaker !== null && entrySuit !== null) $('input-0').focus();
+}
+
 // Ouvrir l'écran de saisie d'une nouvelle manche
 $('btn-open-entry').addEventListener('click', () => {
   resetEntry();
-  showView('entry');
-  $('input-0').focus();
+  showView('entry'); // la saisie commence par le choix du preneur
+});
+
+// Choix du preneur
+[0, 1].forEach((i) => {
+  $(`taker-${i}`).addEventListener('click', () => {
+    entryTaker = i;
+    render();
+    focusPointsIfReady();
+  });
+});
+
+// Choix de la couleur d'atout
+document.querySelectorAll('.suit-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    entrySuit = btn.dataset.suit;
+    render();
+    focusPointsIfReady();
+  });
 });
 
 // Quitter la saisie sans rien enregistrer
@@ -227,26 +313,38 @@ $('btn-entry-cancel').addEventListener('click', () => {
 });
 
 $('btn-add').addEventListener('click', () => {
+  // Le bouton est désactivé tant que preneur et couleur ne sont pas
+  // choisis ; ceci n'est qu'une ceinture de sécurité.
+  if (entryTaker === null || entrySuit === null) return;
+
   // Champ vide = 0 (pratique pour un capot)
   const p0 = parseInt($('input-0').value, 10) || 0;
   const p1 = parseInt($('input-1').value, 10) || 0;
   const belote = [$('belote-0').checked, $('belote-1').checked];
+  const capot = [$('capot-0').checked, $('capot-1').checked];
 
   if (p0 < 0 || p1 < 0) return;
   // Au-delà de 162, seuls les 252 imposés par la case capot passent
-  const capotOn = $('capot-0').checked || $('capot-1').checked;
-  if (!capotOn && (p0 > ROUND_TOTAL || p1 > ROUND_TOTAL)) return;
+  if (!capot[0] && !capot[1] && (p0 > ROUND_TOTAL || p1 > ROUND_TOTAL)) return;
   if (p0 + p1 === 0) {
     $('input-0').focus();
     return; // rien à ajouter, même si une belote est cochée
   }
+
+  const round = {
+    points: [p0, p1],
+    belote,
+    capot,
+    taker: entryTaker,
+    suit: entrySuit,
+  };
 
   // On vide la saisie et on repasse sur l'écran de la partie AVANT
   // addRound() : son render() recalcule ainsi le verrouillage avec
   // les cases décochées, et l'animation des scores est visible.
   resetEntry();
   currentView = 'game';
-  addRound(p0, p1, belote);
+  addRound(round);
 });
 
 // La touche Entrée valide aussi la manche

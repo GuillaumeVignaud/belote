@@ -86,6 +86,28 @@
       <section class="entry" aria-label="Ajouter une manche">
         <h2 class="entry-title" id="entry-title">Manche 1</h2>
 
+        <!-- 1. L'équipe qui a pris (obligatoire avant la saisie des points) -->
+        <p class="entry-label">Qui a pris&nbsp;?</p>
+        <div class="take-row" role="group" aria-label="Équipe qui a pris">
+          <button type="button" class="choice-btn" id="taker-0" aria-pressed="false">Nous</button>
+          <button type="button" class="choice-btn" id="taker-1" aria-pressed="false">Eux</button>
+        </div>
+
+        <!-- 2. La couleur d'atout (obligatoire aussi) -->
+        <p class="entry-label">À quelle couleur&nbsp;?</p>
+        <div class="suit-row" role="group" aria-label="Couleur d'atout">
+          <button type="button" class="choice-btn suit-btn" data-suit="♠"
+                  aria-label="Pique" aria-pressed="false">&spades;</button>
+          <button type="button" class="choice-btn suit-btn choice-btn--red" data-suit="♥"
+                  aria-label="Cœur" aria-pressed="false">&hearts;</button>
+          <button type="button" class="choice-btn suit-btn choice-btn--red" data-suit="♦"
+                  aria-label="Carreau" aria-pressed="false">&diams;</button>
+          <button type="button" class="choice-btn suit-btn" data-suit="♣"
+                  aria-label="Trèfle" aria-pressed="false">&clubs;</button>
+        </div>
+
+        <!-- 3. Les points de la manche -->
+        <p class="entry-label">Points</p>
         <div class="entry-inputs">
           <div class="entry-col">
             <span class="entry-team-name" id="entry-name-0">Nous</span>

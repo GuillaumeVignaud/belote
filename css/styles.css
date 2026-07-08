@@ -189,6 +189,54 @@ main {
   margin: 0 0 16px;
 }
 
+/* Libellé de chaque étape de la saisie (preneur, couleur, points) */
+.entry-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  margin: 16px 0 6px;
+}
+
+/* Boutons de choix : équipe qui a pris, couleur d'atout */
+.take-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.suit-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.choice-btn {
+  font: 600 1rem var(--font-ui);
+  padding: 12px 8px;
+  min-height: 48px; /* cible tactile confortable */
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--card);
+  cursor: pointer;
+}
+
+.choice-btn.is-selected {
+  background: var(--card);
+  border-color: var(--card);
+  color: var(--felt-dark);
+}
+
+.choice-btn:active { transform: translateY(1px); }
+.choice-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.choice-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Les pips de couleur, gros et lisibles ; cœur et carreau en rouge */
+.suit-btn { font-size: 1.5rem; line-height: 1; padding: 8px; }
+.choice-btn--red { color: #F2B3B3; }
+.choice-btn--red.is-selected { color: var(--rouge); }
+
 /* Nom de l'équipe au-dessus de son champ de points */
 .entry-team-name {
   display: block;
@@ -321,6 +369,9 @@ main {
 
 .history-list .round-label { opacity: 0.6; }
 .history-list .round-points { font-variant-numeric: tabular-nums; }
+
+/* Couleur d'atout affichée à côté des points du preneur */
+.round-suit--red { color: #F2B3B3; }
 
 .empty {
   text-align: center;
