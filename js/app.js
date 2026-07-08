@@ -23,6 +23,7 @@
 /* ---------- 1. L'état ---------- */
 
 const STORAGE_KEY = 'belote-state-v1';
+const ROUND_TOTAL = 162; // total des points d'une manche classique, et plafond de saisie
 
 function defaultState() {
   return {
@@ -189,6 +190,9 @@ $('btn-add').addEventListener('click', () => {
   const belote = [$('belote-0').checked, $('belote-1').checked];
 
   if (p0 < 0 || p1 < 0) return;
+  // Au-delà de 162, seuls les 252 imposés par la case capot passent
+  const capotOn = $('capot-0').checked || $('capot-1').checked;
+  if (!capotOn && (p0 > ROUND_TOTAL || p1 > ROUND_TOTAL)) return;
   if (p0 + p1 === 0) {
     $('input-0').focus();
     return; // rien à ajouter, même si une belote est cochée
@@ -281,18 +285,25 @@ let autoFilled = [false, false];
     // Le joueur vient d'écrire ou de vider ce champ : il lui appartient
     autoFilled[i] = false;
 
+    // Saisie plafonnée à 162 : au-delà, on ramène au maximum.
+    // (Les 252 d'un capot sont posés par sa case, jamais tapés ici.)
+    let value = parseInt($(`input-${i}`).value, 10);
+    if (value > ROUND_TOTAL) {
+      value = ROUND_TOTAL;
+      $(`input-${i}`).value = ROUND_TOTAL;
+    }
+
     const otherField = $(`input-${other}`);
 
     // Règle d'or : on n'écrase jamais un contenu tapé par le joueur.
     // On n'écrit en face que sur du vide ou sur du contenu machine.
     if (otherField.value !== '' && !autoFilled[other]) return;
 
-    const value = parseInt($(`input-${i}`).value, 10);
     if (Number.isNaN(value)) {
       otherField.value = '';       // champ vidé → le complément se vide aussi
       autoFilled[other] = false;   // un champ vide n'appartient à personne
     } else {
-      otherField.value = Math.max(0, 162 - value);
+      otherField.value = Math.max(0, ROUND_TOTAL - value);
       autoFilled[other] = true;    // ce contenu est à la machine
     }
   });
