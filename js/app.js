@@ -155,10 +155,15 @@ function render(options = {}) {
   }
 
   const gameOver = winner !== -1;
-  $('input-0').disabled = gameOver;
-  $('input-1').disabled = gameOver;
+  // Pendant un capot, les points sont imposés (252 — 0) :
+  // la saisie manuelle reste verrouillée tant que la case est cochée.
+  const capotLock = $('capot-0').checked || $('capot-1').checked;
+  $('input-0').disabled = gameOver || capotLock;
+  $('input-1').disabled = gameOver || capotLock;
   $('belote-0').disabled = gameOver;
   $('belote-1').disabled = gameOver;
+  $('capot-0').disabled = gameOver;
+  $('capot-1').disabled = gameOver;
   $('btn-add').disabled = gameOver;
   $('btn-undo').disabled = state.rounds.length === 0;
 }
@@ -189,12 +194,16 @@ $('btn-add').addEventListener('click', () => {
     return; // rien à ajouter, même si une belote est cochée
   }
 
-  addRound(p0, p1, belote);
+  // On remet la zone de saisie à zéro AVANT addRound() : son render()
+  // recalcule ainsi le verrouillage avec les cases capot décochées.
   $('input-0').value = '';
   $('input-1').value = '';
-  $('belote-0').checked = false;
-  $('belote-1').checked = false;
+  ['belote-0', 'belote-1', 'capot-0', 'capot-1'].forEach((id) => {
+    $(id).checked = false;
+  });
   autoFilled = [false, false]; // on réactive le remplissage automatique
+
+  addRound(p0, p1, belote);
   $('input-0').focus();
 });
 
@@ -210,6 +219,30 @@ $('btn-add').addEventListener('click', () => {
 [0, 1].forEach((i) => {
   $(`belote-${i}`).addEventListener('change', (event) => {
     if (event.target.checked) $(`belote-${1 - i}`).checked = false;
+  });
+});
+
+/* --- Capot --- */
+// L'équipe qui remporte tous les plis marque 252 points, l'adversaire 0.
+// Cocher une case impose ces points et verrouille la saisie manuelle ;
+// décocher rend la main au joueur avec des champs vides.
+const CAPOT_POINTS = 252;
+
+[0, 1].forEach((i) => {
+  $(`capot-${i}`).addEventListener('change', (event) => {
+    // Un seul capot possible par manche
+    if (event.target.checked) $(`capot-${1 - i}`).checked = false;
+
+    const capot = [$('capot-0').checked, $('capot-1').checked];
+    if (capot[0] || capot[1]) {
+      $('input-0').value = capot[0] ? CAPOT_POINTS : 0;
+      $('input-1').value = capot[1] ? CAPOT_POINTS : 0;
+    } else {
+      $('input-0').value = '';
+      $('input-1').value = '';
+    }
+    autoFilled = [false, false]; // ces valeurs ne relèvent pas du complément à 162
+    render(); // met à jour le verrouillage des champs
   });
 });
 
