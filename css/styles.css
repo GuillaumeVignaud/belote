@@ -373,6 +373,9 @@ main {
 /* Couleur d'atout affichée à côté des points du preneur */
 .round-suit--red { color: #F2B3B3; }
 
+/* Écran "Parties" : l'équipe gagnante en doré */
+.game-winner { color: var(--gold); font-weight: 600; }
+
 .empty {
   text-align: center;
   font-size: 0.85rem;

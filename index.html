@@ -75,7 +75,7 @@
       <!-- ===== Actions ===== -->
       <section class="actions">
         <button class="btn" id="btn-undo">Annuler la dernière manche</button>
-        <button class="btn btn--danger" id="btn-new">Nouvelle partie</button>
+        <button class="btn" id="btn-open-games">Historique des parties</button>
       </section>
     </div>
 
@@ -149,6 +149,24 @@
         <button class="btn btn--primary" id="btn-add">Ajouter la manche</button>
         <button class="btn" id="btn-entry-cancel">Retour</button>
         <p class="hint">Une manche classique totalise 162 points.</p>
+      </section>
+    </div>
+
+    <!-- =====================================================
+         Écran "Parties" : l'historique des parties jouées
+         ===================================================== -->
+    <div id="view-games" hidden>
+      <section class="history" aria-label="Historique des parties">
+        <h2 class="history-title">Parties</h2>
+        <ol class="history-list" id="games-list" reversed>
+          <!-- Rempli par app.js -->
+        </ol>
+        <p class="empty" id="games-empty">Aucune partie archivée pour l'instant.</p>
+      </section>
+
+      <section class="actions">
+        <button class="btn btn--primary" id="btn-new-game">Nouvelle partie</button>
+        <button class="btn" id="btn-games-back">Retour</button>
       </section>
     </div>
   </main>

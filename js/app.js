@@ -34,6 +34,10 @@ function defaultState() {
     // [{ points: [82, 80], belote: [true, false], capot: [false, false],
     //    taker: 0, suit: '♥' }, ...]
     rounds: [],
+    // parties archivées (au lancement d'une nouvelle partie) :
+    // [{ teamNames: ['Nous', 'Eux'], target: 1000, scores: [1020, 860],
+    //    winner: 0, endedAt: 1767916800000 }, ...]
+    games: [],
   };
 }
 
@@ -150,7 +154,19 @@ function undoLastRound() {
 }
 
 function newGame() {
+  // La partie en cours (si elle a au moins une manche) rejoint
+  // l'historique des parties avant la remise à zéro.
+  if (state.rounds.length > 0) {
+    state.games.push({
+      teamNames: [...state.teamNames],
+      target: state.target,
+      scores: totals(),
+      winner: winnerIndex(), // -1 : partie interrompue avant l'objectif
+      endedAt: Date.now(),
+    });
+  }
   state.rounds = []; // on garde les noms d'équipes et l'objectif
+  currentView = 'game'; // on repart sur l'écran de la nouvelle partie
   save();
   render();
 }
@@ -164,9 +180,10 @@ function render(options = {}) {
   const [scoreA, scoreB] = totals();
   const winner = winnerIndex();
 
-  // Bascule entre les deux écrans
+  // Bascule entre les écrans
   $('view-game').hidden = currentView !== 'game';
   $('view-entry').hidden = currentView !== 'entry';
+  $('view-games').hidden = currentView !== 'games';
 
   // Scores
   updateScore($('score-0'), scoreA, options.bumpScores);
@@ -216,6 +233,25 @@ function render(options = {}) {
     list.prepend(li);
   });
   $('history-empty').hidden = state.rounds.length > 0;
+
+  // Historique des parties (la plus récente en haut)
+  const gamesList = $('games-list');
+  gamesList.innerHTML = '';
+  state.games.forEach((game) => {
+    const li = document.createElement('li');
+    const date = new Date(game.endedAt).toLocaleDateString('fr-FR', {
+      day: 'numeric', month: 'short', year: 'numeric',
+    });
+    // Le vainqueur est doré ; une partie interrompue n'en a pas.
+    const side = (team) =>
+      `<span${game.winner === team ? ' class="game-winner"' : ''}>` +
+      `${game.teamNames[team]} ${game.scores[team]}</span>`;
+    li.innerHTML =
+      `<span class="round-label">${date}</span>` +
+      `<span class="round-points">${side(0)} — ${side(1)}</span>`;
+    gamesList.prepend(li);
+  });
+  $('games-empty').hidden = state.games.length > 0;
 
   // Équipe gagnante : halo doré + bandeau + saisie désactivée
   $('card-0').classList.toggle('is-winner', winner === 0);
@@ -388,8 +424,16 @@ const CAPOT_POINTS = 252;
 
 $('btn-undo').addEventListener('click', undoLastRound);
 
-$('btn-new').addEventListener('click', () => {
-  if (state.rounds.length === 0 || confirm('Effacer la partie en cours ?')) {
+// Écran "Parties" : consultation de l'historique et nouvelle partie
+$('btn-open-games').addEventListener('click', () => showView('games'));
+$('btn-games-back').addEventListener('click', () => showView('game'));
+
+$('btn-new-game').addEventListener('click', () => {
+  // Une partie finie (ou vide) repart sans question ; une partie en
+  // cours est archivée telle quelle, on prévient donc le joueur.
+  const unfinished = state.rounds.length > 0 && winnerIndex() === -1;
+  if (!unfinished ||
+      confirm("La partie en cours n'est pas terminée. L'archiver et en commencer une nouvelle ?")) {
     newGame();
   }
 });
